@@ -53,9 +53,31 @@ private:
 public:
   Z3Walker() : ctx(), solver(ctx) {}
 
+//  z3::expr getX() {
+//	  return ctx.bv_const("x", 32);
+//  }
+//
+//  z3::expr getY() {
+//	  return ctx.bv_const("y", 32);
+//  }
+
   // Not using InstVisitor::visit due to their sequential order.
   // We want topological order on the Call Graph and CFG.
   void visitModule(Module &M) {
+//	  z3::expr x = getX();
+//	  z3::expr y = ctx.bv_const("3", 32);
+//	  z3::expr x0 = x;
+//	  solver.reset();
+//	  solver.add((x & y) == 0);
+//	  solver.add(ctx.bv_const("3", 32) == 3);
+//	  solver.add(getY() == 2);
+//	  if (solver.check() == z3::sat) {
+//		  std::cout << "Yes" << std::endl;
+//	  } else std::cout << "No" << std::endl;
+//	  std::cout << solver.get_model() << std::endl;
+//	  return ;
+
+
 	  data_layout = new DataLayout(&M);
 	  std::cout << "call visitModule: " << std::endl;
 	  for (auto i = M.begin(), fun_end = M.end(); i != fun_end; ++ i) {
@@ -65,12 +87,12 @@ public:
   void visitFunction(Function &F) {
 	  std::cout << "call visitFunction: " << getName(F) << std::endl;
 	  solver.reset();
-	  for (auto i = F.arg_begin(), j = F.arg_end(); i != j; ++ i) {
-		  Type * type = i->getType();
-		  auto type_size = data_layout->getTypeAllocSizeInBits(type);
-		  std::cout << "arg: " << getName(*i) << " size: " << type_size << std::endl;
-		  z3::expr arg_in_z3 = ctx.bv_const(getName(*i), type_size);
-	  }
+	  //for (auto i = F.arg_begin(), j = F.arg_end(); i != j; ++ i) {
+	  //        Type * type = i->getType();
+	  //        auto type_size = data_layout->getTypeAllocSizeInBits(type);
+	  //        std::cout << "arg: " << getName(*i) << " size: " << type_size << std::endl;
+	  //        z3::expr arg_in_z3 = ctx.bv_val(getName(*i).c_str(), type_size);
+	  //}
 	  // topological sort 
 	  for (auto i = F.begin(), j = F.end(); i != j; ++ i) {
 		  BasicBlock & bb = *i;
@@ -146,15 +168,285 @@ public:
   }
 
   void visitAdd(BinaryOperator &I) {
+	  Type * type = I.getType();
+	  auto type_size = data_layout->getTypeAllocSizeInBits(type);
+	  Value * l = I.getOperand(0);
+	  Value * r = I.getOperand(1);
+	  I.dump();
+	  std::cout << getName(I) << " = " << getName(*l) << " add " << getName(*r) << std::endl;
+
+	  z3::expr dst = ctx.bv_const(getName(I).c_str(), type_size);
+	  std::string lname = isa<Constant>(l) ? getName(*l) + "const" : getName(*l);
+	  std::string rname = isa<Constant>(r) ? getName(*r) + "const" : getName(*r);
+	  z3::expr lop = ctx.bv_const(lname.c_str(), type_size);
+	  z3::expr rop = ctx.bv_const(rname.c_str(), type_size);
+	  solver.add((lop + rop) == dst);
+
+	  if (isa<Constant>(l)) {
+	          std::string val = getName(*l);
+	          int ival = std::atoi(val.c_str());
+	          solver.add(lop == ival);
+	  }
+	  if (isa<Constant>(r)) {
+	          std::string val = getName(*r);
+	          int ival = std::atoi(val.c_str());
+	          solver.add(rop == ival);
+	  }
+
+	  if (solver.check() == z3::sat) {
+		  std::cout << "Yes" << std::endl;
+	  	std::cout << solver.get_model() << std::endl;
+	  }
   }
-  void visitSub(BinaryOperator &I) {}
-  void visitMul(BinaryOperator &I) {}
-  void visitShl(BinaryOperator &I) {}
-  void visitLShr(BinaryOperator &I) {}
-  void visitAShr(BinaryOperator &I) {}
-  void visitAnd(BinaryOperator &I) {}
-  void visitOr(BinaryOperator &I) {}
-  void visitXor(BinaryOperator &I) {}
+  void visitSub(BinaryOperator &I) {
+	  Type * type = I.getType();
+	  auto type_size = data_layout->getTypeAllocSizeInBits(type);
+	  Value * l = I.getOperand(0);
+	  Value * r = I.getOperand(1);
+	  I.dump();
+	  std::cout << getName(I) << " = " << getName(*l) << " sub " << getName(*r) << std::endl;
+
+	  z3::expr dst = ctx.bv_const(getName(I).c_str(), type_size);
+	  std::string lname = isa<Constant>(l) ? getName(*l) + "const" : getName(*l);
+	  std::string rname = isa<Constant>(r) ? getName(*r) + "const" : getName(*r);
+	  z3::expr lop = ctx.bv_const(lname.c_str(), type_size);
+	  z3::expr rop = ctx.bv_const(rname.c_str(), type_size);
+	  solver.add((lop - rop) == dst);
+
+	  if (isa<Constant>(l)) {
+	          std::string val = getName(*l);
+	          int ival = std::atoi(val.c_str());
+	          solver.add(lop == ival);
+	  }
+	  if (isa<Constant>(r)) {
+	          std::string val = getName(*r);
+	          int ival = std::atoi(val.c_str());
+	          solver.add(rop == ival);
+	  }
+
+	  if (solver.check() == z3::sat) {
+		  std::cout << "Yes" << std::endl;
+	  	std::cout << solver.get_model() << std::endl;
+	  }
+  }
+  void visitMul(BinaryOperator &I) {
+	  Type * type = I.getType();
+	  auto type_size = data_layout->getTypeAllocSizeInBits(type);
+	  Value * l = I.getOperand(0);
+	  Value * r = I.getOperand(1);
+	  I.dump();
+	  std::cout << getName(I) << " = " << getName(*l) << " mul " << getName(*r) << std::endl;
+
+	  z3::expr dst = ctx.bv_const(getName(I).c_str(), type_size);
+	  std::string lname = isa<Constant>(l) ? getName(*l) + "const" : getName(*l);
+	  std::string rname = isa<Constant>(r) ? getName(*r) + "const" : getName(*r);
+	  z3::expr lop = ctx.bv_const(lname.c_str(), type_size);
+	  z3::expr rop = ctx.bv_const(rname.c_str(), type_size);
+	  solver.add((lop * rop) == dst);
+
+	  if (isa<Constant>(l)) {
+	          std::string val = getName(*l);
+	          int ival = std::atoi(val.c_str());
+	          solver.add(lop == ival);
+	  }
+	  if (isa<Constant>(r)) {
+	          std::string val = getName(*r);
+	          int ival = std::atoi(val.c_str());
+	          solver.add(rop == ival);
+	  }
+
+	  if (solver.check() == z3::sat) {
+		  std::cout << "Yes" << std::endl;
+	  	std::cout << solver.get_model() << std::endl;
+	  }
+  }
+  void visitShl(BinaryOperator &I) {
+	  Type * type = I.getType();
+	  auto type_size = data_layout->getTypeAllocSizeInBits(type);
+	  Value * l = I.getOperand(0);
+	  Value * r = I.getOperand(1);
+	  I.dump();
+	  std::cout << getName(I) << " = " << getName(*l) << " shl " << getName(*r) << std::endl;
+
+	  z3::expr dst = ctx.bv_const(getName(I).c_str(), type_size);
+	  std::string lname = isa<Constant>(l) ? getName(*l) + "const" : getName(*l);
+	  std::string rname = isa<Constant>(r) ? getName(*r) + "const" : getName(*r);
+	  z3::expr lop = ctx.bv_const(lname.c_str(), type_size);
+	  z3::expr rop = ctx.bv_const(rname.c_str(), type_size);
+	  solver.add(shl(lop, rop) == dst);
+
+	  if (isa<Constant>(l)) {
+	          std::string val = getName(*l);
+	          int ival = std::atoi(val.c_str());
+	          solver.add(lop == ival);
+	  }
+	  if (isa<Constant>(r)) {
+	          std::string val = getName(*r);
+	          int ival = std::atoi(val.c_str());
+	          solver.add(rop == ival);
+	  }
+
+	  if (solver.check() == z3::sat) {
+		  std::cout << "Yes" << std::endl;
+	  	std::cout << solver.get_model() << std::endl;
+	  }
+  }
+  void visitLShr(BinaryOperator &I) {
+	  Type * type = I.getType();
+	  auto type_size = data_layout->getTypeAllocSizeInBits(type);
+	  Value * l = I.getOperand(0);
+	  Value * r = I.getOperand(1);
+	  I.dump();
+	  std::cout << getName(I) << " = " << getName(*l) << " lshr " << getName(*r) << std::endl;
+
+	  z3::expr dst = ctx.bv_const(getName(I).c_str(), type_size);
+	  std::string lname = isa<Constant>(l) ? getName(*l) + "const" : getName(*l);
+	  std::string rname = isa<Constant>(r) ? getName(*r) + "const" : getName(*r);
+	  z3::expr lop = ctx.bv_const(lname.c_str(), type_size);
+	  z3::expr rop = ctx.bv_const(rname.c_str(), type_size);
+	  solver.add(lshr(lop, rop) == dst);
+
+	  if (isa<Constant>(l)) {
+	          std::string val = getName(*l);
+	          int ival = std::atoi(val.c_str());
+	          solver.add(lop == ival);
+	  }
+	  if (isa<Constant>(r)) {
+	          std::string val = getName(*r);
+	          int ival = std::atoi(val.c_str());
+	          solver.add(rop == ival);
+	  }
+
+	  if (solver.check() == z3::sat) {
+		  std::cout << "Yes" << std::endl;
+	  	std::cout << solver.get_model() << std::endl;
+	  }
+  }
+  void visitAShr(BinaryOperator &I) {
+	  Type * type = I.getType();
+	  auto type_size = data_layout->getTypeAllocSizeInBits(type);
+	  Value * l = I.getOperand(0);
+	  Value * r = I.getOperand(1);
+	  I.dump();
+	  std::cout << getName(I) << " = " << getName(*l) << " ashr " << getName(*r) << std::endl;
+
+	  z3::expr dst = ctx.bv_const(getName(I).c_str(), type_size);
+	  std::string lname = isa<Constant>(l) ? getName(*l) + "const" : getName(*l);
+	  std::string rname = isa<Constant>(r) ? getName(*r) + "const" : getName(*r);
+	  z3::expr lop = ctx.bv_const(lname.c_str(), type_size);
+	  z3::expr rop = ctx.bv_const(rname.c_str(), type_size);
+	  solver.add(ashr(lop, rop) == dst);
+
+	  if (isa<Constant>(l)) {
+	          std::string val = getName(*l);
+	          int ival = std::atoi(val.c_str());
+	          solver.add(lop == ival);
+	  }
+	  if (isa<Constant>(r)) {
+	          std::string val = getName(*r);
+	          int ival = std::atoi(val.c_str());
+	          solver.add(rop == ival);
+	  }
+
+	  if (solver.check() == z3::sat) {
+		  std::cout << "Yes" << std::endl;
+	  	std::cout << solver.get_model() << std::endl;
+	  }
+
+  }
+  void visitAnd(BinaryOperator &I) {
+	  Type * type = I.getType();
+	  auto type_size = data_layout->getTypeAllocSizeInBits(type);
+	  Value * l = I.getOperand(0);
+	  Value * r = I.getOperand(1);
+	  I.dump();
+	  std::cout << getName(I) << " = " << getName(*l) << " and " << getName(*r) << std::endl;
+
+	  z3::expr dst = ctx.bv_const(getName(I).c_str(), type_size);
+	  std::string lname = isa<Constant>(l) ? getName(*l) + "const" : getName(*l);
+	  std::string rname = isa<Constant>(r) ? getName(*r) + "const" : getName(*r);
+	  z3::expr lop = ctx.bv_const(lname.c_str(), type_size);
+	  z3::expr rop = ctx.bv_const(rname.c_str(), type_size);
+	  solver.add((lop & rop) == dst);
+
+	  if (isa<Constant>(l)) {
+	          std::string val = getName(*l);
+	          int ival = std::atoi(val.c_str());
+	          solver.add(lop == ival);
+	  }
+	  if (isa<Constant>(r)) {
+	          std::string val = getName(*r);
+	          int ival = std::atoi(val.c_str());
+	          solver.add(rop == ival);
+	  }
+
+	  if (solver.check() == z3::sat) {
+		  std::cout << "Yes" << std::endl;
+	  	std::cout << solver.get_model() << std::endl;
+	  }
+  }
+  void visitOr(BinaryOperator &I) {
+	  Type * type = I.getType();
+	  auto type_size = data_layout->getTypeAllocSizeInBits(type);
+	  Value * l = I.getOperand(0);
+	  Value * r = I.getOperand(1);
+	  I.dump();
+	  std::cout << getName(I) << " = " << getName(*l) << " or " << getName(*r) << std::endl;
+
+	  z3::expr dst = ctx.bv_const(getName(I).c_str(), type_size);
+	  std::string lname = isa<Constant>(l) ? getName(*l) + "const" : getName(*l);
+	  std::string rname = isa<Constant>(r) ? getName(*r) + "const" : getName(*r);
+	  z3::expr lop = ctx.bv_const(lname.c_str(), type_size);
+	  z3::expr rop = ctx.bv_const(rname.c_str(), type_size);
+	  solver.add((lop | rop) == dst);
+
+	  if (isa<Constant>(l)) {
+	          std::string val = getName(*l);
+	          int ival = std::atoi(val.c_str());
+	          solver.add(lop == ival);
+	  }
+	  if (isa<Constant>(r)) {
+	          std::string val = getName(*r);
+	          int ival = std::atoi(val.c_str());
+	          solver.add(rop == ival);
+	  }
+
+	  if (solver.check() == z3::sat) {
+		  std::cout << "Yes" << std::endl;
+	  	std::cout << solver.get_model() << std::endl;
+	  }
+  }
+  void visitXor(BinaryOperator &I) {
+	  Type * type = I.getType();
+	  auto type_size = data_layout->getTypeAllocSizeInBits(type);
+	  Value * l = I.getOperand(0);
+	  Value * r = I.getOperand(1);
+	  I.dump();
+	  std::cout << getName(I) << " = " << getName(*l) << " xor " << getName(*r) << std::endl;
+
+	  z3::expr dst = ctx.bv_const(getName(I).c_str(), type_size);
+	  std::string lname = isa<Constant>(l) ? getName(*l) + "const" : getName(*l);
+	  std::string rname = isa<Constant>(r) ? getName(*r) + "const" : getName(*r);
+	  z3::expr lop = ctx.bv_const(lname.c_str(), type_size);
+	  z3::expr rop = ctx.bv_const(rname.c_str(), type_size);
+	  solver.add((lop ^ rop) == dst);
+
+	  if (isa<Constant>(l)) {
+	          std::string val = getName(*l);
+	          int ival = std::atoi(val.c_str());
+	          solver.add(lop == ival);
+	  }
+	  if (isa<Constant>(r)) {
+	          std::string val = getName(*r);
+	          int ival = std::atoi(val.c_str());
+	          solver.add(rop == ival);
+	  }
+
+	  if (solver.check() == z3::sat) {
+		  std::cout << "Yes" << std::endl;
+	  	std::cout << solver.get_model() << std::endl;
+	  }
+  }
 
   void visitICmp(ICmpInst &I) {}
 
