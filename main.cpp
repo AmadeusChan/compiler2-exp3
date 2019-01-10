@@ -1,4 +1,4 @@
-
+#include <queue>
 #include <map>
 #include <string>
 
@@ -46,16 +46,107 @@ private:
   z3::context ctx;
   z3::solver solver;
 
+  std::map<std::string, int> num_of_pred;
+  std::queue<BasicBlock *> bb_queue;
+  DataLayout * data_layout;
+
 public:
   Z3Walker() : ctx(), solver(ctx) {}
 
   // Not using InstVisitor::visit due to their sequential order.
   // We want topological order on the Call Graph and CFG.
-  void visitModule(Module &M) {}
-  void visitFunction(Function &F) {}
-  void visitBasicBlock(BasicBlock &B) {}
+  void visitModule(Module &M) {
+	  data_layout = new DataLayout(&M);
+	  std::cout << "call visitModule: " << std::endl;
+	  for (auto i = M.begin(), fun_end = M.end(); i != fun_end; ++ i) {
+		  visitFunction(*i);
+	  }
+  }
+  void visitFunction(Function &F) {
+	  std::cout << "call visitFunction: " << getName(F) << std::endl;
+	  solver.reset();
+	  for (auto i = F.arg_begin(), j = F.arg_end(); i != j; ++ i) {
+		  Type * type = i->getType();
+		  auto type_size = data_layout->getTypeAllocSizeInBits(type);
+		  std::cout << "arg: " << getName(*i) << " size: " << type_size << std::endl;
+		  z3::expr arg_in_z3 = ctx.bv_const(getName(*i), type_size);
+	  }
+	  // topological sort 
+	  for (auto i = F.begin(), j = F.end(); i != j; ++ i) {
+		  BasicBlock & bb = *i;
+		  std::string name = getName(bb);
+		  int num = 0;
+		  for (auto it = pred_begin(&bb), et = pred_end(&bb); it != et; ++ it) {
+			  num ++;
+		  }
+		  num_of_pred[name] = num;
+		  std::cout << "num_of_pred[" << name << "] = " << num << std::endl;
+	  }
 
-  void visitAdd(BinaryOperator &I) {}
+	  std::cout << "topological sort:" << std::endl;
+	  while (! bb_queue.empty()) bb_queue.pop();
+	  bb_queue.push(&F.getEntryBlock());
+	  while (bb_queue.empty() == false) {
+		  BasicBlock * bb = bb_queue.front();
+		  bb_queue.pop();
+		  //std::cout << getName(*bb) << std::endl;
+		  visitBasicBlock(*bb);
+		  for (auto it = succ_begin(bb), et = succ_end(bb); it != et; ++ it) {
+			  BasicBlock * succ = *it;
+			  std::string name = getName(*succ);
+			  if ((--num_of_pred[name]) == 0) {
+				  bb_queue.push(succ);
+			  }
+		  }
+	  }
+
+	  std::cout << std::endl;
+  }
+  void visitBasicBlock(BasicBlock &B) {
+	  std::cout << "call visitBasicBlock " << getName(B) << std::endl;
+	  std::cout << getName(B) << std::endl;
+	  for (auto i = B.begin(), j = B.end(); i != j; ++ i) {
+		  Instruction & inst = *i;
+		  if (isa<BinaryOperator>(&inst)) {
+			  visitBinaryOperator(*dyn_cast<BinaryOperator>(&inst));
+		  } else if (isa<ICmpInst>(&inst)) {
+			  visitICmp(*dyn_cast<ICmpInst>(&inst));
+		  } else if (isa<BranchInst>(&inst)) {
+			  visitBranchInst(*dyn_cast<BranchInst>(&inst));
+		  } else if (isa<PHINode>(&inst)) {
+			  visitPHINode(*dyn_cast<PHINode>(&inst));
+		  } else if (isa<GetElementPtrInst>(&inst)) {
+			  visitGetElementPtrInst(*dyn_cast<GetElementPtrInst>(&inst));
+		  }
+	  }
+  }
+
+
+  void visitBinaryOperator(BinaryOperator &I) {
+	  auto op_code = I.getOpcode();
+	  if (op_code == Instruction::Add) {
+		  visitAdd(I);
+	  } else if (op_code == Instruction::Sub) {
+		  visitSub(I);
+	  } else if (op_code == Instruction::Mul) {
+		  visitMul(I);
+	  } else if (op_code == Instruction::Shl) {
+		  visitShl(I);
+	  } else if (op_code == Instruction::LShr) {
+		  visitLShr(I);
+	  } else if (op_code == Instruction::AShr) {
+		  visitAShr(I);
+	  } else if (op_code == Instruction::And) {
+		  visitAnd(I);
+	  } else if (op_code == Instruction::Or) {
+		  visitOr(I);
+	  } else if (op_code == Instruction::Xor) {
+		  visitXor(I);
+	  }
+  }
+
+  void visitAdd(BinaryOperator &I) {
+  }
   void visitSub(BinaryOperator &I) {}
   void visitMul(BinaryOperator &I) {}
   void visitShl(BinaryOperator &I) {}
@@ -64,6 +155,7 @@ public:
   void visitAnd(BinaryOperator &I) {}
   void visitOr(BinaryOperator &I) {}
   void visitXor(BinaryOperator &I) {}
+
   void visitICmp(ICmpInst &I) {}
 
   void visitBranchInst(BranchInst &I) {}
