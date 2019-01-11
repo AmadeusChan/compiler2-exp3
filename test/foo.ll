@@ -141,6 +141,13 @@ entry:
   %andx = and i32 %ashrx, 255
   %orx = or i32 %ashrx, 255
   %xorx = xor i32 %ashrx, 255
+  %eqx = icmp eq i32 2, %addx
+  %nex = icmp ne i32 10, %addx
+  %ugtx = icmp ugt i32 0, %addx
+  %ugex = icmp uge i32 1, %addx
+  %ultx = icmp ult i32 10, %addx
+  %ulex = icmp ule i32 2, %addx
+  %slex = icmp sle i32 2147483648, %addx
 
   %call = call i32 @abs(i32 %i)
   %cmp = icmp slt i32 %call, 1024

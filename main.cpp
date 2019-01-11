@@ -448,13 +448,89 @@ public:
 	  }
   }
 
-  void visitICmp(ICmpInst &I) {}
+  void visitZExt(ZExtInst & I) {
+	  //TODO
+  }
+  void visitSExt(SExtInst & I) {
+	  //TODO
+  }
 
-  void visitBranchInst(BranchInst &I) {}
-  void visitPHINode(PHINode &I) {}
+  void visitICmp(ICmpInst &I) {
+	  //TODO
+	  Value * l = I.getOperand(0);
+	  Value * r = I.getOperand(1);
+	  Type * type = l->getType();
+	  auto type_size = data_layout->getTypeAllocSizeInBits(type);
+	  I.dump();
+	  std::cout << getName(I) << " = " << getName(*l) << " icmp " << getName(*r) << std::endl; 
+
+	  z3::expr dst = ctx.bv_const(getName(I).c_str(), 1);
+	  std::string lname = isa<Constant>(l) ? getName(*l) + "const" : getName(*l);
+	  std::string rname = isa<Constant>(r) ? getName(*r) + "const" : getName(*r);
+	  z3::expr lop = ctx.bv_const(lname.c_str(), type_size);
+	  z3::expr rop = ctx.bv_const(rname.c_str(), type_size);
+	  if (isa<Constant>(l)) {
+	          std::string val = getName(*l);
+	          int ival = std::atoi(val.c_str());
+	          solver.add(lop == ival);
+	  }
+	  if (isa<Constant>(r)) {
+	          std::string val = getName(*r);
+	          int ival = std::atoi(val.c_str());
+	          solver.add(rop == ival);
+	  }
+
+	  ICmpInst::Predicate pred = I.getPredicate();
+	  if (pred == ICmpInst::ICMP_EQ) {
+		  std::cout << "ICMP_EQ" << std::endl;
+		  solver.add(ite(lop == rop, dst == 1, dst == 0));
+	  } else if (pred == ICmpInst::ICMP_NE) {
+		  std::cout<< "ICMP_NE" << std::endl;
+		  solver.add(ite(lop == rop, dst == 0, dst == 1));
+	  } else if (pred == ICmpInst::ICMP_UGT) {
+		  std::cout << "ICMP_UGT" << std::endl;
+		  solver.add(ite(ugt(lop, rop), dst == 1, dst == 0));
+	  } else if (pred == ICmpInst::ICMP_UGE) {
+		  std::cout << "ICMP_UGE" << std::endl;
+		  solver.add(ite(uge(lop, rop), dst == 1, dst == 0));
+	  } else if (pred == ICmpInst::ICMP_ULT) {
+		  std::cout << "ICMP_ULT" << std::endl;
+		  solver.add(ite(ult(lop, rop), dst == 1, dst == 0));
+	  } else if (pred == ICmpInst::ICMP_ULE) {
+		  std::cout << "ICMP_ULE" << std::endl;
+		  solver.add(ite(ule(lop, rop), dst == 1, dst == 0));
+	  } else if (pred == ICmpInst::ICMP_SGT) {
+		  std::cout << "ICMP_SGT" << std::endl;
+		  solver.add(ite(lop > rop, dst == 1, dst == 0));
+	  } else if (pred == ICmpInst::ICMP_SGE) {
+		  std::cout << "ICMP_SGE" << std::endl;
+		  solver.add(ite(lop >= rop, dst == 1, dst == 0));
+	  } else if (pred == ICmpInst::ICMP_SLT) {
+		  std::cout << "ICMP_SLT" << std::endl;
+		  solver.add(ite(lop < rop, dst == 1, dst == 0));
+	  } else if (pred == ICmpInst::ICMP_SLE) {
+		  std::cout << "ICMP_SLE" << std::endl;
+		  solver.add(ite(lop <= rop, dst == 1, dst == 0));
+	  	  //std::cout << solver.assertions() << std::endl;
+	  	  //if (solver.check() == z3::sat) {
+	  	  //      std::cout << "Yes" << std::endl;
+	  	  //	std::cout << solver.get_model() << std::endl;
+	  	  //}
+	  }
+
+  }
+
+  void visitBranchInst(BranchInst &I) {
+	  //TODO
+  }
+  void visitPHINode(PHINode &I) {
+	  //TODO
+  }
 
   // Call checkAndReport here.
-  void visitGetElementPtrInst(GetElementPtrInst &I) {}
+  void visitGetElementPtrInst(GetElementPtrInst &I) {
+	  //TODO
+  }
 };
 
 int main(int argc, char const *argv[]) {
