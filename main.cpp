@@ -89,7 +89,7 @@ public:
 	  }
   }
   void visitFunction(Function &F) {
-	  std::cout << "call visitFunction: " << getName(F) << std::endl;
+	  std::cout << "****** call visitFunction: " << getName(F) << std::endl;
 	  solver.reset();
 
 	  //std::vector<z3::expr> expr_vec;
@@ -111,7 +111,7 @@ public:
 			  num ++;
 		  }
 		  num_of_pred[name] = num;
-		  std::cout << "num_of_pred[" << name << "] = " << num << std::endl;
+		  //std::cout << "num_of_pred[" << name << "] = " << num << std::endl;
 		  basic_block_name_list.push_back(name);
 	  }
 	  for (std::string name: basic_block_name_list) { // clear the predicate_map 
@@ -120,7 +120,7 @@ public:
 		  }
 	  }
 
-	  std::cout << "topological sort:" << std::endl;
+	  //std::cout << "topological sort:" << std::endl;
 	  while (! bb_queue.empty()) bb_queue.pop();
 	  bb_queue.push(&F.getEntryBlock());
 	  while (bb_queue.empty() == false) {
@@ -137,7 +137,7 @@ public:
 		  }
 	  }
 
-	  std::cout << std::endl;
+	  //std::cout << std::endl;
   }
   void visitBasicBlock(BasicBlock &B) {
 	  std::cout << "call visitBasicBlock " << getName(B) << std::endl;
@@ -229,6 +229,12 @@ public:
 		  solver.add(z3_expr == ival);
 	  }
 	  return z3_expr;
+  }
+
+  unsigned getValueSize(Value * value) {
+	  Type * type = value->getType();
+	  unsigned type_size = type->getIntegerBitWidth();
+	  return type_size;
   }
 
   void debugOutput() {
@@ -594,34 +600,34 @@ public:
 
 	  ICmpInst::Predicate pred = I.getPredicate();
 	  if (pred == ICmpInst::ICMP_EQ) {
-		  std::cout << "ICMP_EQ" << std::endl;
+		  //std::cout << "ICMP_EQ" << std::endl;
 		  solver.add(ite(lop == rop, dst == 1, dst == 0));
 	  } else if (pred == ICmpInst::ICMP_NE) {
-		  std::cout<< "ICMP_NE" << std::endl;
+		  //std::cout<< "ICMP_NE" << std::endl;
 		  solver.add(ite(lop == rop, dst == 0, dst == 1));
 	  } else if (pred == ICmpInst::ICMP_UGT) {
-		  std::cout << "ICMP_UGT" << std::endl;
+		  //std::cout << "ICMP_UGT" << std::endl;
 		  solver.add(ite(ugt(lop, rop), dst == 1, dst == 0));
 	  } else if (pred == ICmpInst::ICMP_UGE) {
-		  std::cout << "ICMP_UGE" << std::endl;
+		  //std::cout << "ICMP_UGE" << std::endl;
 		  solver.add(ite(uge(lop, rop), dst == 1, dst == 0));
 	  } else if (pred == ICmpInst::ICMP_ULT) {
-		  std::cout << "ICMP_ULT" << std::endl;
+		  //std::cout << "ICMP_ULT" << std::endl;
 		  solver.add(ite(ult(lop, rop), dst == 1, dst == 0));
 	  } else if (pred == ICmpInst::ICMP_ULE) {
-		  std::cout << "ICMP_ULE" << std::endl;
+		  //std::cout << "ICMP_ULE" << std::endl;
 		  solver.add(ite(ule(lop, rop), dst == 1, dst == 0));
 	  } else if (pred == ICmpInst::ICMP_SGT) {
-		  std::cout << "ICMP_SGT" << std::endl;
+		  //std::cout << "ICMP_SGT" << std::endl;
 		  solver.add(ite(lop > rop, dst == 1, dst == 0));
 	  } else if (pred == ICmpInst::ICMP_SGE) {
-		  std::cout << "ICMP_SGE" << std::endl;
+		  //std::cout << "ICMP_SGE" << std::endl;
 		  solver.add(ite(lop >= rop, dst == 1, dst == 0));
 	  } else if (pred == ICmpInst::ICMP_SLT) {
-		  std::cout << "ICMP_SLT" << std::endl;
+		  //std::cout << "ICMP_SLT" << std::endl;
 		  solver.add(ite(lop < rop, dst == 1, dst == 0));
 	  } else if (pred == ICmpInst::ICMP_SLE) {
-		  std::cout << "ICMP_SLE" << std::endl;
+		  //std::cout << "ICMP_SLE" << std::endl;
 		  solver.add(ite(lop <= rop, dst == 1, dst == 0));
 	  }
   }
@@ -675,7 +681,6 @@ public:
 	  }
   }
   void visitPHINode(PHINode &I) {
-	  //TODO
 	  std::string current_bb_name = getName(*current_bb);
 	  unsigned num_incoming_edges = I.getNumIncomingValues();
 	  z3::expr dst_expr = getDstExpr(I);
@@ -695,12 +700,36 @@ public:
 		  }
 		  assert(found == true);
 	  }
-	  debugOutput();
+	  //debugOutput();
   }
 
   // Call checkAndReport here.
   void visitGetElementPtrInst(GetElementPtrInst &I) {
 	  //TODO
+	  I.dump();
+	  if (I.isInBounds()) {
+		  Type * type = I.getSourceElementType();
+		  if (isa<ArrayType>(type)) {
+			  ArrayType * array_type = dyn_cast<ArrayType>(type);
+			  Type * ele_type = array_type->getElementType();
+			  unsigned ele_type_size = ele_type->getIntegerBitWidth();
+			  unsigned array_len = array_type->getNumElements();
+			  if (ele_type_size == 32) {
+				  //std::cout << I.getNumOperands() << std::endl;
+				  //for (unsigned i = 0; i < I.getNumOperands(); ++ i) {
+				  //        std::cout << getName(*I.getOperand(i)) << " ";
+				  //}
+				  //std::cout << "\n";
+				  Value * idx = I.getOperand(2);
+				  z3::expr idx_expr = sext(getZ3ExprByValue(idx), 64 - getValueSize(idx));
+				  solver.push();
+				  solver.add(! (idx_expr >= ctx.bv_val(0, 64) && idx_expr < ctx.bv_val(array_len, 64)));
+				  solver.add(getPreCondition());
+				  checkAndReport(solver, I);
+				  solver.pop();
+			  }
+		  }
+	  }
   }
 };
 
