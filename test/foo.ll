@@ -148,6 +148,8 @@ entry:
   %ultx = icmp ult i32 10, %addx
   %ulex = icmp ule i32 2, %addx
   %slex = icmp sle i32 2147483648, %addx
+  %zextx = zext i1 %slex to i32
+  %sextx = sext i1 %slex to i32
 
   %call = call i32 @abs(i32 %i)
   %cmp = icmp slt i32 %call, 1024
