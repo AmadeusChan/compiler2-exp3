@@ -132,6 +132,7 @@ if.end:                                           ; preds = %if.else, %if.then
 
 define i32 @interproc(i32 %i) {
 entry:
+  %testi = add i32 %i, %i
   %addx = add i32 1, 1
   %subx = sub i32 10, 2
   %mulx = mul i32 2, %subx
