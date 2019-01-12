@@ -105,12 +105,12 @@ public:
   }
 
   void debugOutput() {
-	  std::cout << "Print Debug Message" << std::endl;
-	  std::cout << solver.assertions() << std::endl;
-	  if (solver.check() == z3::sat) {
-	        std::cout << "Yes" << std::endl;
-	  	std::cout << solver.get_model() << std::endl;
-	  }
+	  //std::cout << "Print Debug Message" << std::endl;
+	  //std::cout << solver.assertions() << std::endl;
+	  //if (solver.check() == z3::sat) {
+	  //      std::cout << "Yes" << std::endl;
+	  //	std::cout << solver.get_model() << std::endl;
+	  //}
   }
 
   z3::sort_vector getFunctionArgsSortVec() {
@@ -149,7 +149,7 @@ public:
   // We want topological order on the Call Graph and CFG.
   void visitModule(Module &M) {
 	  data_layout = new DataLayout(&M);
-	  std::cout << "call visitModule: " << std::endl;
+	  //std::cout << "call visitModule: " << std::endl;
 	  for (auto i = M.begin(), fun_end = M.end(); i != fun_end; ++ i) {
 		  visitFunction(*i);
 	  }
@@ -166,7 +166,7 @@ public:
 	  }
   }
   void visitFunction(Function &F) {
-	  std::cout << "****** call visitFunction: " << getName(F) << std::endl;
+	  //std::cout << "****** call visitFunction: " << getName(F) << std::endl;
 
 	  current_function = &F;
 	  current_function_name = getName(F);
@@ -176,7 +176,7 @@ public:
 	          Value * value = i;
 		  std::string arg_name = current_function_name + "+" + getName(*value);
 		  args_name.insert(arg_name);
-		  std::cout << "*** arg: " << arg_name << std::endl;
+		  //std::cout << "*** arg: " << arg_name << std::endl;
 	  }
 
 	  basic_block_name_list.clear();
@@ -212,8 +212,8 @@ public:
 	  }
   }
   void visitBasicBlock(BasicBlock &B) {
-	  std::cout << "call visitBasicBlock " << getName(B) << std::endl;
-	  std::cout << getName(B) << std::endl;
+	  //std::cout << "call visitBasicBlock " << getName(B) << std::endl;
+	  //std::cout << getName(B) << std::endl;
 	  current_bb = &B;
 	  for (auto i = B.begin(), j = B.end(); i != j; ++ i) {
 		  Instruction & inst = *i;
@@ -394,7 +394,7 @@ public:
   }
 
   void visitICmp(ICmpInst &I) {
-	  I.dump();
+	  //I.dump();
 	  z3::expr dst = getDstExpr(I);
 	  z3::expr lop = getOperandExpr(I, 0);
 	  z3::expr rop = getOperandExpr(I, 1);
@@ -487,7 +487,6 @@ public:
 
   // Call checkAndReport here.
   void visitGetElementPtrInst(GetElementPtrInst &I) {
-	  // TODO
 	  //I.dump();
 	  if (I.isInBounds()) {
 	          Type * type = I.getSourceElementType();
