@@ -83,13 +83,13 @@ public:
 
 
 	  data_layout = new DataLayout(&M);
-	  std::cout << "call visitModule: " << std::endl;
+	  //std::cout << "call visitModule: " << std::endl;
 	  for (auto i = M.begin(), fun_end = M.end(); i != fun_end; ++ i) {
 		  visitFunction(*i);
 	  }
   }
   void visitFunction(Function &F) {
-	  std::cout << "****** call visitFunction: " << getName(F) << std::endl;
+	  //std::cout << "****** call visitFunction: " << getName(F) << std::endl;
 	  solver.reset();
 
 	  //std::vector<z3::expr> expr_vec;
@@ -140,8 +140,8 @@ public:
 	  //std::cout << std::endl;
   }
   void visitBasicBlock(BasicBlock &B) {
-	  std::cout << "call visitBasicBlock " << getName(B) << std::endl;
-	  std::cout << getName(B) << std::endl;
+	  //std::cout << "call visitBasicBlock " << getName(B) << std::endl;
+	  //std::cout << getName(B) << std::endl;
 	  current_bb = &B;
 	  for (auto i = B.begin(), j = B.end(); i != j; ++ i) {
 		  Instruction & inst = *i;
@@ -238,11 +238,11 @@ public:
   }
 
   void debugOutput() {
-	  std::cout << solver.assertions() << std::endl;
-	  if (solver.check() == z3::sat) {
-	        std::cout << "Yes" << std::endl;
-	  	std::cout << solver.get_model() << std::endl;
-	  }
+	  //std::cout << solver.assertions() << std::endl;
+	  //if (solver.check() == z3::sat) {
+	  //      std::cout << "Yes" << std::endl;
+	  //	std::cout << solver.get_model() << std::endl;
+	  //}
   }
 
   void visitAdd(BinaryOperator &I) {
@@ -593,7 +593,7 @@ public:
 	  //        solver.add(rop == ival);
 	  //}
 
-	  I.dump();
+	  //I.dump();
 	  z3::expr dst = getDstExpr(I);
 	  z3::expr lop = getOperandExpr(I, 0);
 	  z3::expr rop = getOperandExpr(I, 1);
@@ -705,8 +705,7 @@ public:
 
   // Call checkAndReport here.
   void visitGetElementPtrInst(GetElementPtrInst &I) {
-	  //TODO
-	  I.dump();
+	  //I.dump();
 	  if (I.isInBounds()) {
 		  Type * type = I.getSourceElementType();
 		  if (isa<ArrayType>(type)) {
