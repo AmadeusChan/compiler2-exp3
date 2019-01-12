@@ -132,26 +132,6 @@ if.end:                                           ; preds = %if.else, %if.then
 
 define i32 @interproc(i32 %i) {
 entry:
-  %testi = add i32 %i, %i
-  %addx = add i32 1, 1
-  %subx = sub i32 10, 2
-  %mulx = mul i32 2, %subx
-  %shlx = shl i32 %mulx, 2
-  %lshrx = lshr i32 %shlx, 2
-  %ashrx = ashr i32 %lshrx, 2
-  %andx = and i32 %ashrx, 255
-  %orx = or i32 %ashrx, 255
-  %xorx = xor i32 %ashrx, 255
-  %eqx = icmp eq i32 2, %addx
-  %nex = icmp ne i32 10, %addx
-  %ugtx = icmp ugt i32 0, %addx
-  %ugex = icmp uge i32 1, %addx
-  %ultx = icmp ult i32 10, %addx
-  %ulex = icmp ule i32 2, %addx
-  %slex = icmp sle i32 2147483648, %addx
-  %zextx = zext i1 %slex to i32
-  %sextx = sext i1 %slex to i32
-
   %call = call i32 @abs(i32 %i)
   %cmp = icmp slt i32 %call, 1024
   br i1 %cmp, label %if.then, label %if.else

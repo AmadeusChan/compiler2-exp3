@@ -42,6 +42,15 @@ void checkAndReport(z3::solver &solver, const GetElementPtrInst &gep) {
 }
 } // namespace
 
+struct CheckList {
+	GetElementPtrInst &gep;
+	z3::expr pre_condition;
+	z3::expr out_of_bound_predicate;
+	CheckList(GetElementPtrInst &_gep, z3::expr _pre_condition, z3::expr _out_of_bound_predicate): 
+		gep(_gep), pre_condition(_pre_condition), out_of_bound_predicate(_out_of_bound_predicate) {
+		}
+};
+
 // ONLY MODIFY THIS CLASS FOR PART 1 & 2!
 class Z3Walker : public InstVisitor<Z3Walker> {
 private:
@@ -58,6 +67,7 @@ private:
   std::string current_function_name;
   Function * current_function;
   std::set<std::string> args_name;
+  std::vector<CheckList> check_list;
 public:
   Z3Walker() : ctx(), solver(ctx) {}
 
@@ -143,7 +153,17 @@ public:
 	  for (auto i = M.begin(), fun_end = M.end(); i != fun_end; ++ i) {
 		  visitFunction(*i);
 	  }
-	  debugOutput();
+	  //debugOutput();
+	  checkWhetherOutOfBound(M);
+  }
+  void checkWhetherOutOfBound(Module &M) {
+	  for (CheckList i: check_list) {
+		  solver.push();
+		  solver.add(i.out_of_bound_predicate);
+		  solver.add(i.pre_condition);
+		  checkAndReport(solver, i.gep);
+		  solver.pop();
+	  }
   }
   void visitFunction(Function &F) {
 	  std::cout << "****** call visitFunction: " << getName(F) << std::endl;
@@ -206,7 +226,7 @@ public:
 		  } else if (isa<PHINode>(&inst)) {
 			  visitPHINode(*dyn_cast<PHINode>(&inst));
 		  } else if (isa<GetElementPtrInst>(&inst)) {
-			  //visitGetElementPtrInst(*dyn_cast<GetElementPtrInst>(&inst));
+			  visitGetElementPtrInst(*dyn_cast<GetElementPtrInst>(&inst));
 		  } else if (isa<ZExtInst>(&inst)) {
 			  visitZExt(*dyn_cast<ZExtInst>(&inst));
 		  } else if (isa<SExtInst>(&inst)) {
@@ -239,8 +259,8 @@ public:
 	  	z3::expr return_expr = getZ3ExprByValue(return_value);
 	  	z3::func_decl func = getCurrentFunctionDecl();
 	  	z3::expr pred_cond = getPreCondition();
-	  	//solver.add(forall(getFunctionArgsVarVec(), implies(pred_cond, func(getFunctionArgsVarVec()) == return_expr)));
-	  	solver.add(forall(getFunctionArgsVarVec(), func(getFunctionArgsVarVec()) == return_expr)); // assume that there is only one return statement in one function
+	  	solver.add(implies(pred_cond, func(getFunctionArgsVarVec()) == return_expr));
+	  	//solver.add(forall(getFunctionArgsVarVec(), func(getFunctionArgsVarVec()) == return_expr)); // assume that there is only one return statement in one function
 	  }
   }
 
@@ -469,24 +489,30 @@ public:
   void visitGetElementPtrInst(GetElementPtrInst &I) {
 	  // TODO
 	  //I.dump();
-	  //if (I.isInBounds()) {
-	  //        Type * type = I.getSourceElementType();
-	  //        if (isa<ArrayType>(type)) {
-	  //      	  ArrayType * array_type = dyn_cast<ArrayType>(type);
-	  //      	  Type * ele_type = array_type->getElementType();
-	  //      	  unsigned ele_type_size = ele_type->getIntegerBitWidth();
-	  //      	  unsigned array_len = array_type->getNumElements();
-	  //      	  if (ele_type_size == 32) {
-	  //      		  Value * idx = I.getOperand(2);
-	  //      		  z3::expr idx_expr = sext(getZ3ExprByValue(idx), 64 - getValueSize(idx));
-	  //      		  solver.push();
-	  //      		  solver.add(! (idx_expr >= ctx.bv_val(0, 64) && idx_expr < ctx.bv_val(array_len, 64)));
-	  //      		  solver.add(getPreCondition());
-	  //      		  checkAndReport(solver, I);
-	  //      		  solver.pop();
-	  //      	  }
-	  //        }
-	  //}
+	  if (I.isInBounds()) {
+	          Type * type = I.getSourceElementType();
+	          if (isa<ArrayType>(type)) {
+	        	  ArrayType * array_type = dyn_cast<ArrayType>(type);
+	        	  Type * ele_type = array_type->getElementType();
+	        	  unsigned ele_type_size = ele_type->getIntegerBitWidth();
+	        	  unsigned array_len = array_type->getNumElements();
+	        	  if (ele_type_size == 32) {
+	        		  Value * idx = I.getOperand(2);
+	        		  z3::expr idx_expr = sext(getZ3ExprByValue(idx), 64 - getValueSize(idx));
+
+				  check_list.push_back(CheckList(
+							  I, 
+							  ! (idx_expr >= ctx.bv_val(0, 64) && idx_expr < ctx.bv_val(array_len, 64)),
+							  getPreCondition()
+							  ));
+	        		  //solver.push();
+	        		  //solver.add(! (idx_expr >= ctx.bv_val(0, 64) && idx_expr < ctx.bv_val(array_len, 64)));
+	        		  //solver.add(getPreCondition());
+	        		  //checkAndReport(solver, I);
+	        		  //solver.pop();
+	        	  }
+	          }
+	  }
   }
 };
 
