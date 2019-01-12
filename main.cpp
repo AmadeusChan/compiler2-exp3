@@ -61,23 +61,37 @@ private:
 public:
   Z3Walker() : ctx(), solver(ctx) {}
 
-  z3::expr getZ3ExprByValue(Value * value) {
-	  Type * type = value->getType();
-	  unsigned type_size = type->getIntegerBitWidth();
-	  std::string name = isa<Constant>(value) ? getName(*value) + "const" : getName(*value);
-	  z3::expr z3_expr = ctx.bv_const(name.c_str(), type_size);
-	  if (isa<Constant>(value)) {
-		  std::string val = getName(*value);
-		  int ival = std::atoi(val.c_str());
-		  solver.add(z3_expr == ival);
-	  }
-	  return z3_expr;
-  }
-
   unsigned getValueSize(Value * value) {
 	  Type * type = value->getType();
 	  unsigned type_size = type->getIntegerBitWidth();
 	  return type_size;
+  }
+
+  z3::expr getZ3ExprByValue(Value * value) {
+//	  Type * type = value->getType();
+//	  unsigned type_size = type->getIntegerBitWidth();
+//	  std::string name = isa<Constant>(value) ? getName(*value) + "const" : getName(*value);
+//	  z3::expr z3_expr = ctx.bv_const(name.c_str(), type_size);
+//	  if (isa<Constant>(value)) {
+//		  std::string val = getName(*value);
+//		  int ival = std::atoi(val.c_str());
+//		  solver.add(z3_expr == ival);
+//	  }
+//	  return z3_expr;
+//
+	  unsigned type_size = getValueSize(value);
+	  if (isa<Constant>(value)) {
+		  std::string val = getName(*value);
+		  return ctx.bv_val(std::atoi(val.c_str()), type_size);
+	  }
+	  std::string name = current_function_name + "+" + getName(*value);
+	  if (args_name.find(name) != args_name.end()) { // if this operand is a argument
+		  return ctx.bv_const(name.c_str(), type_size);
+	  }
+	  // if this operand is a reigster
+	  z3::func_decl func = ctx.function(name.c_str(), getFunctionArgsSortVec(), ctx.bv_sort(type_size));
+	  z3::expr z3_expr = func(getFunctionArgsVarVec());
+	  return z3_expr;
   }
 
   void debugOutput() {
@@ -107,6 +121,17 @@ public:
 		  vec.push_back(ctx.bv_const(value_name.c_str(), value_size));
 	  }
 	  return vec;
+  }
+
+  z3::func_decl getFunctionDecl(Function * func) {
+	  Type * return_type = func->getReturnType();
+	  std::string name = getName(*func);
+	  unsigned type_size = return_type->getIntegerBitWidth();
+	  return ctx.function(name.c_str(), getFunctionArgsSortVec(), ctx.bv_sort(type_size));
+  }
+
+  z3::func_decl getCurrentFunctionDecl() {
+	  return getFunctionDecl(current_function);
   }
 
   // Not using InstVisitor::visit due to their sequential order.
@@ -190,11 +215,24 @@ public:
   }
 
   void visitCallInst(CallInst &I) {
-	  // TODO
+	  unsigned num_args = I.getNumArgOperands();
+	  z3::expr_vector args = z3::expr_vector(ctx);
+	  for (unsigned i = 0; i < num_args; ++ i) {
+		  Value * arg = I.getArgOperand(i);
+		  z3::expr arg_expr = getZ3ExprByValue(arg);
+		  args.push_back(arg_expr);
+	  }
+	  z3::expr dst = getDstExpr(I);
+	  z3::func_decl caller = getFunctionDecl(I.getCalledFunction());
+	  solver.add(forall(getFunctionArgsVarVec(), dst == caller(args)));
   }
 
   void visitReturnInst(ReturnInst &I) {
-	  // TODO
+	  Value * return_value = I.getReturnValue();
+	  z3::expr return_expr = getZ3ExprByValue(return_value);
+	  z3::func_decl func = getCurrentFunctionDecl();
+	  z3::expr pred_cond = getPreCondition();
+	  solver.add(forall(getFunctionArgsVarVec(), implies(pred_cond, func(getFunctionArgsVarVec()) == return_expr)));
   }
 
   void visitBinaryOperator(BinaryOperator &I) {
@@ -240,17 +278,6 @@ public:
   }
 
   z3::expr getOperandExpr(Instruction &I, unsigned idx) {
-	  //Value * value = I.getOperand(idx);
-	  //auto type_size = getOperandSize(I, idx);
-	  //std::string name = isa<Constant>(value) ? getName(*value) + "const" : getName(*value);
-	  //z3::expr z3_expr = ctx.bv_const(name.c_str(), type_size);
-	  //if (isa<Constant>(value)) {
-	  //        std::string val = getName(*value);
-	  //        int ival = std::atoi(val.c_str());
-	  //        solver.add(z3_expr == ival);
-	  //}
-	  //return z3_expr;
-
 	  Value * value = I.getOperand(idx);
 	  unsigned type_size = getOperandSize(I, idx);
 	  if (isa<Constant>(value)) { // if this operand is a constant
@@ -259,7 +286,6 @@ public:
 	  }
 	  std::string name = current_function_name + "+" + getName(*value);
 	  if (args_name.find(name) != args_name.end()) { // if this operand is a argument
-		  //std::cout << "***** Found arg name" << std::endl;
 		  return ctx.bv_const(name.c_str(), type_size);
 	  }
 	  // if this operand is a reigster
@@ -385,50 +411,49 @@ public:
   }
 
   void visitBranchInst(BranchInst &I) {
-	  // TODO
-	  //std::string current_bb_name = getName(*current_bb);
-	  //z3::expr pred_cond = getPreCondition();
+	  std::string current_bb_name = getName(*current_bb);
+	  z3::expr pred_cond = getPreCondition();
 
-	  //if (I.isUnconditional()) {
-	  //        unsigned num_succ = I.getNumSuccessors();
-	  //        assert(num_succ == 1);
-	  //        BasicBlock * succ_bb = I.getSuccessor(0);
-	  //        std::string succ_bb_name = getName(*succ_bb);
-	  //        predicate_map[succ_bb_name].push_back(std::make_pair(current_bb_name, pred_cond));
-	  //} else {
-	  //        unsigned num_succ = I.getNumSuccessors();
-	  //        assert(num_succ == 2);
-	  //        Value * cond = I.getCondition();
-	  //        z3::expr cond_expr = getZ3ExprByValue(cond);
-	  //        BasicBlock * then_bb = I.getSuccessor(0);
-	  //        BasicBlock * else_bb = I.getSuccessor(1);
-	  //        std::string then_bb_name = getName(*then_bb);
-	  //        std::string else_bb_name = getName(*else_bb);
-	  //        predicate_map[then_bb_name].push_back(std::make_pair(current_bb_name, pred_cond && (cond_expr != 0)));
-	  //        predicate_map[else_bb_name].push_back(std::make_pair(current_bb_name, pred_cond && (cond_expr == 0)));
-	  //}
+	  if (I.isUnconditional()) {
+	          unsigned num_succ = I.getNumSuccessors();
+	          assert(num_succ == 1);
+	          BasicBlock * succ_bb = I.getSuccessor(0);
+	          std::string succ_bb_name = getName(*succ_bb);
+	          predicate_map[succ_bb_name].push_back(std::make_pair(current_bb_name, pred_cond));
+	  } else {
+	          unsigned num_succ = I.getNumSuccessors();
+	          assert(num_succ == 2);
+	          Value * cond = I.getCondition();
+	          z3::expr cond_expr = getZ3ExprByValue(cond);
+	          BasicBlock * then_bb = I.getSuccessor(0);
+	          BasicBlock * else_bb = I.getSuccessor(1);
+	          std::string then_bb_name = getName(*then_bb);
+	          std::string else_bb_name = getName(*else_bb);
+	          predicate_map[then_bb_name].push_back(std::make_pair(current_bb_name, pred_cond && (cond_expr != 0)));
+	          predicate_map[else_bb_name].push_back(std::make_pair(current_bb_name, pred_cond && (cond_expr == 0)));
+	  }
   }
   void visitPHINode(PHINode &I) {
-	  // TODO
-	  //std::string current_bb_name = getName(*current_bb);
-	  //unsigned num_incoming_edges = I.getNumIncomingValues();
-	  //z3::expr dst_expr = getDstExpr(I);
-	  //for (unsigned i = 0; i < num_incoming_edges; ++ i) {
-	  //        Value * value = I.getIncomingValue(i);
-	  //        z3::expr value_expr = getZ3ExprByValue(value);
-	  //        BasicBlock * pred_bb = I.getIncomingBlock(i);
-	  //        std::string pred_bb_name = getName(*pred_bb);
-	  //        std::vector<std::pair<std::string, z3::expr>> & vec_expr = predicate_map[current_bb_name];
-	  //        bool found = false;
-	  //        for (auto p: vec_expr) {
-	  //      	  if (p.first == pred_bb_name) {
-	  //      		  solver.add(implies(p.second, dst_expr == value_expr));
-	  //      		  found = true;
-	  //      		  break;
-	  //      	  }
-	  //        }
-	  //        assert(found == true);
-	  //}
+	  std::string current_bb_name = getName(*current_bb);
+	  unsigned num_incoming_edges = I.getNumIncomingValues();
+	  z3::expr dst_expr = getDstExpr(I);
+	  for (unsigned i = 0; i < num_incoming_edges; ++ i) {
+	          Value * value = I.getIncomingValue(i);
+	          z3::expr value_expr = getZ3ExprByValue(value);
+	          BasicBlock * pred_bb = I.getIncomingBlock(i);
+	          std::string pred_bb_name = getName(*pred_bb);
+	          std::vector<std::pair<std::string, z3::expr>> & vec_expr = predicate_map[current_bb_name];
+	          bool found = false;
+	          for (auto p: vec_expr) {
+	        	  if (p.first == pred_bb_name) {
+				  solver.add(forall(getFunctionArgsVarVec(), implies(p.second, dst_expr == value_expr)));
+	        		  //solver.add(implies(p.second, dst_expr == value_expr));
+	        		  found = true;
+	        		  break;
+	        	  }
+	          }
+	          assert(found == true);
+	  }
   }
 
   // Call checkAndReport here.

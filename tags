@@ -1,0 +1,55 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_OUTPUT_MODE	u-ctags	/u-ctags or e-ctags/
+!_TAG_PROGRAM_AUTHOR	Universal Ctags Team	//
+!_TAG_PROGRAM_NAME	Universal Ctags	/Derived from Exuberant Ctags/
+!_TAG_PROGRAM_URL	https://ctags.io/	/official site/
+!_TAG_PROGRAM_VERSION	0.0.0	/c04ceb8/
+Z3Walker	main.cpp	/^  Z3Walker() : ctx(), solver(ctx) {}$/;"	f	class:Z3Walker	file:
+Z3Walker	main.cpp	/^class Z3Walker : public InstVisitor<Z3Walker> {$/;"	c	file:
+__anon3b5b11db0110	main.cpp	/^namespace {$/;"	n	file:
+args_name	main.cpp	/^  std::set<std::string> args_name;$/;"	m	class:Z3Walker	typeref:typename:std::set<std::string>	file:
+basic_block_name_list	main.cpp	/^  std::vector<std::string> basic_block_name_list;$/;"	m	class:Z3Walker	typeref:typename:std::vector<std::string>	file:
+bb_queue	main.cpp	/^  std::queue<BasicBlock *> bb_queue;$/;"	m	class:Z3Walker	typeref:typename:std::queue<BasicBlock * >	file:
+checkAndReport	main.cpp	/^void checkAndReport(z3::solver &solver, const GetElementPtrInst &gep) {$/;"	f	namespace:__anon3b5b11db0110	typeref:typename:void
+ctx	main.cpp	/^  z3::context ctx;$/;"	m	class:Z3Walker	typeref:typename:z3::context	file:
+current_bb	main.cpp	/^  BasicBlock * current_bb;$/;"	m	class:Z3Walker	typeref:typename:BasicBlock *	file:
+current_function	main.cpp	/^  Function * current_function;$/;"	m	class:Z3Walker	typeref:typename:Function *	file:
+current_function_name	main.cpp	/^  std::string current_function_name;$/;"	m	class:Z3Walker	typeref:typename:std::string	file:
+data_layout	main.cpp	/^  DataLayout * data_layout;$/;"	m	class:Z3Walker	typeref:typename:DataLayout *	file:
+debugOutput	main.cpp	/^  void debugOutput() {$/;"	f	class:Z3Walker	typeref:typename:void	file:
+getDstExpr	main.cpp	/^  z3::expr getDstExpr(Instruction &I) {$/;"	f	class:Z3Walker	typeref:typename:z3::expr	file:
+getDstSize	main.cpp	/^  unsigned getDstSize(Instruction &I) {$/;"	f	class:Z3Walker	typeref:typename:unsigned	file:
+getFunctionArgsSortVec	main.cpp	/^  z3::sort_vector getFunctionArgsSortVec() {$/;"	f	class:Z3Walker	typeref:typename:z3::sort_vector	file:
+getFunctionArgsVarVec	main.cpp	/^  z3::expr_vector getFunctionArgsVarVec() {$/;"	f	class:Z3Walker	typeref:typename:z3::expr_vector	file:
+getName	main.cpp	/^std::string getName(const Value &Node) {$/;"	f	namespace:__anon3b5b11db0110	typeref:typename:std::string
+getOperandExpr	main.cpp	/^  z3::expr getOperandExpr(Instruction &I, unsigned idx) {$/;"	f	class:Z3Walker	typeref:typename:z3::expr	file:
+getOperandSize	main.cpp	/^  unsigned getOperandSize(Instruction &I, unsigned idx) {$/;"	f	class:Z3Walker	typeref:typename:unsigned	file:
+getPreCondition	main.cpp	/^  z3::expr getPreCondition() {$/;"	f	class:Z3Walker	typeref:typename:z3::expr	file:
+getValueSize	main.cpp	/^  unsigned getValueSize(Value * value) {$/;"	f	class:Z3Walker	typeref:typename:unsigned	file:
+getZ3ExprByValue	main.cpp	/^  z3::expr getZ3ExprByValue(Value * value) {$/;"	f	class:Z3Walker	typeref:typename:z3::expr	file:
+main	main.cpp	/^int main(int argc, char const *argv[]) {$/;"	f	typeref:typename:int
+num_of_pred	main.cpp	/^  std::map<std::string, int> num_of_pred;$/;"	m	class:Z3Walker	typeref:typename:std::map<std::string,int>	file:
+predicate_map	main.cpp	/^  std::map<std::string, std::vector<std::pair<std::string, z3::expr>>> predicate_map; \/\/ predi/;"	m	class:Z3Walker	typeref:typename:std::map<std::string,std::vector<std::pair<std::string,z3::expr>>>	file:
+solver	main.cpp	/^  z3::solver solver;$/;"	m	class:Z3Walker	typeref:typename:z3::solver	file:
+visitAShr	main.cpp	/^  void visitAShr(BinaryOperator &I) {$/;"	f	class:Z3Walker	typeref:typename:void	file:
+visitAdd	main.cpp	/^  void visitAdd(BinaryOperator &I) {$/;"	f	class:Z3Walker	typeref:typename:void	file:
+visitAnd	main.cpp	/^  void visitAnd(BinaryOperator &I) {$/;"	f	class:Z3Walker	typeref:typename:void	file:
+visitBasicBlock	main.cpp	/^  void visitBasicBlock(BasicBlock &B) {$/;"	f	class:Z3Walker	typeref:typename:void	file:
+visitBinaryOperator	main.cpp	/^  void visitBinaryOperator(BinaryOperator &I) {$/;"	f	class:Z3Walker	typeref:typename:void	file:
+visitBranchInst	main.cpp	/^  void visitBranchInst(BranchInst &I) {$/;"	f	class:Z3Walker	typeref:typename:void	file:
+visitCallInst	main.cpp	/^  void visitCallInst(CallInst &I) {$/;"	f	class:Z3Walker	typeref:typename:void	file:
+visitFunction	main.cpp	/^  void visitFunction(Function &F) {$/;"	f	class:Z3Walker	typeref:typename:void	file:
+visitGetElementPtrInst	main.cpp	/^  void visitGetElementPtrInst(GetElementPtrInst &I) {$/;"	f	class:Z3Walker	typeref:typename:void	file:
+visitICmp	main.cpp	/^  void visitICmp(ICmpInst &I) {$/;"	f	class:Z3Walker	typeref:typename:void	file:
+visitLShr	main.cpp	/^  void visitLShr(BinaryOperator &I) {$/;"	f	class:Z3Walker	typeref:typename:void	file:
+visitModule	main.cpp	/^  void visitModule(Module &M) {$/;"	f	class:Z3Walker	typeref:typename:void	file:
+visitMul	main.cpp	/^  void visitMul(BinaryOperator &I) {$/;"	f	class:Z3Walker	typeref:typename:void	file:
+visitOr	main.cpp	/^  void visitOr(BinaryOperator &I) {$/;"	f	class:Z3Walker	typeref:typename:void	file:
+visitPHINode	main.cpp	/^  void visitPHINode(PHINode &I) {$/;"	f	class:Z3Walker	typeref:typename:void	file:
+visitReturnInst	main.cpp	/^  void visitReturnInst(ReturnInst &I) {$/;"	f	class:Z3Walker	typeref:typename:void	file:
+visitSExt	main.cpp	/^  void visitSExt(SExtInst &I) {$/;"	f	class:Z3Walker	typeref:typename:void	file:
+visitShl	main.cpp	/^  void visitShl(BinaryOperator &I) {$/;"	f	class:Z3Walker	typeref:typename:void	file:
+visitSub	main.cpp	/^  void visitSub(BinaryOperator &I) {$/;"	f	class:Z3Walker	typeref:typename:void	file:
+visitXor	main.cpp	/^  void visitXor(BinaryOperator &I) {$/;"	f	class:Z3Walker	typeref:typename:void	file:
+visitZExt	main.cpp	/^  void visitZExt(ZExtInst &I) {$/;"	f	class:Z3Walker	typeref:typename:void	file:
