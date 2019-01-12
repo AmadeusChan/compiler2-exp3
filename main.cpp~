@@ -233,15 +233,12 @@ public:
   }
 
   void visitReturnInst(ReturnInst &I) {
-	  //I.dump();
 	  Value * return_value = I.getReturnValue();
-	  if (return_value != NULL) {
-	  	z3::expr return_expr = getZ3ExprByValue(return_value);
-	  	z3::func_decl func = getCurrentFunctionDecl();
-	  	z3::expr pred_cond = getPreCondition();
-	  	//solver.add(forall(getFunctionArgsVarVec(), implies(pred_cond, func(getFunctionArgsVarVec()) == return_expr)));
-	  	solver.add(forall(getFunctionArgsVarVec(), func(getFunctionArgsVarVec()) == return_expr)); // assume that there is only one return statement in one function
-	  }
+	  if (return_type == null)
+	  //z3::expr return_expr = getZ3ExprByValue(return_value);
+	  //z3::func_decl func = getCurrentFunctionDecl();
+	  //z3::expr pred_cond = getPreCondition();
+	  //solver.add(forall(getFunctionArgsVarVec(), implies(pred_cond, func(getFunctionArgsVarVec()) == return_expr)));
   }
 
   void visitBinaryOperator(BinaryOperator &I) {
@@ -455,8 +452,8 @@ public:
 	          bool found = false;
 	          for (auto p: vec_expr) {
 	        	  if (p.first == pred_bb_name) {
-				  //solver.add(forall(getFunctionArgsVarVec(), (!p.second || dst_expr == value_expr)));
-	        		  solver.add(implies(p.second, dst_expr == value_expr));
+				  solver.add(forall(getFunctionArgsVarVec(), implies(p.second, dst_expr == value_expr)));
+	        		  //solver.add(implies(p.second, dst_expr == value_expr));
 	        		  found = true;
 	        		  break;
 	        	  }
